@@ -1,0 +1,17 @@
+.git
+node_modules
+vendor
+.env
+.env.*
+storage/logs
+storage/framework/cache
+storage/framework/sessions
+storage/framework/views
+app/node_modules
+app/vendor
+app/.env
+app/.env.*
+app/storage/logs
+app/storage/framework/cache
+app/storage/framework/sessions
+app/storage/framework/views

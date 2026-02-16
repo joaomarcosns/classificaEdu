@@ -1,0 +1,22 @@
+FROM dunglas/frankenphp:php8.4
+
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends git unzip \
+	&& rm -rf /var/lib/apt/lists/*
+
+RUN install-php-extensions pdo_pgsql pgsql redis opcache pcntl
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+WORKDIR /app
+
+COPY docker/caddy/Caddyfile /etc/caddy/Caddyfile
+COPY docker/php/entrypoint-octane.sh /usr/local/bin/entrypoint-octane
+
+ENV COMPOSER_ALLOW_SUPERUSER=1
+
+EXPOSE 8000
+
+RUN chmod +x /usr/local/bin/entrypoint-octane
+
+CMD ["/usr/local/bin/entrypoint-octane"]

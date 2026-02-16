@@ -1,0 +1,35 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: classificaedu_app
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env.docker.prod
+    depends_on:
+      - postgres
+      - redis
+      - mailhog
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: classificaedu_postgres
+    environment:
+      POSTGRES_DB: classificaedu
+      POSTGRES_USER: classificaedu
+      POSTGRES_PASSWORD: classificaedu
+    volumes:
+      - ./docker/data/postgres:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: classificaedu_redis
+    volumes:
+      - ./docker/data/redis:/data
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: classificaedu_mailhog
+
