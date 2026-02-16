@@ -12,4 +12,8 @@ if [ ! -d vendor/laravel/octane ]; then
   php artisan octane:install --server=frankenphp
 fi
 
+if [ "${APP_ENV}" = "local" ]; then
+  exec php artisan octane:start --server=frankenphp --host=0.0.0.0 --port=8000 --watch
+fi
+
 exec php artisan octane:start --server=frankenphp --host=0.0.0.0 --port=8000
