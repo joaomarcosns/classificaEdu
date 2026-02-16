@@ -21,7 +21,7 @@ class GradeResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
 
-    protected static ?string $navigationGroup = 'Gestao de Alunos';
+    protected static ?string $navigationGroup = 'Gestão de Alunos';
 
     protected static ?int $navigationSort = 2;
 
