@@ -10,4 +10,5 @@ return [
     'recalculate' => 'Recalcular classificação',
     'recalculate_bulk' => 'Recalcular classificações',
     'view_observations' => 'Visualizar observações da categoria',
+    'back' => 'Voltar',
 ];

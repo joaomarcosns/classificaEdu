@@ -31,6 +31,20 @@ return [
         'high' => '8.0 ou superior',
     ],
 
+    'average' => 'Média',
+
+    'grades_count' => 'Qtd. de Notas',
+
+    'actions' => [
+        'add_grade' => 'Adicionar Nota',
+        'view_grades' => 'Ver Notas do Período',
+    ],
+
+    'empty_state' => [
+        'heading' => 'Nenhuma nota encontrada',
+        'description' => 'Adicione uma nota para este aluno neste período.',
+    ],
+
     'sections' => [
         'grade_info' => 'Informações da Nota',
     ],

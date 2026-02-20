@@ -222,6 +222,7 @@ class StudentResource extends Resource
             'create' => Pages\CreateStudent::route('/create'),
             'view' => Pages\ViewStudent::route('/{record}'),
             'edit' => Pages\EditStudent::route('/{record}/edit'),
+            'view-period-grades' => Pages\ViewStudentPeriodGrades::route('/{record}/period-grades/{periodId}'),
         ];
     }
 

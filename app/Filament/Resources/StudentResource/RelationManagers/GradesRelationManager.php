@@ -3,17 +3,16 @@
 namespace App\Filament\Resources\StudentResource\RelationManagers;
 
 use App\Enums\AssessmentType;
+use App\Filament\Resources\StudentResource;
 use App\Models\EvaluationPeriod;
+use App\Models\Grade;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
-use Filament\Tables\Actions\BulkActionGroup;
+use Filament\Tables\Actions\Action;
 use Filament\Tables\Actions\CreateAction;
-use Filament\Tables\Actions\DeleteAction;
-use Filament\Tables\Actions\DeleteBulkAction;
-use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\DB;
 
 class GradesRelationManager extends RelationManager
 {
@@ -24,63 +23,32 @@ class GradesRelationManager extends RelationManager
         return trans('grades.plural_label');
     }
 
-    public function form(Form $form): Form
+    public function getTableRecordKey($record): string
     {
-        return $form
-            ->schema([
-                Forms\Components\Select::make('period_id')
-                    ->label(trans('grades.fields.evaluation_period'))
-                    ->options(
-                        EvaluationPeriod::query()
-                            ->where('is_active', true)
-                            ->orderBy('academic_year')
-                            ->orderBy('order')
-                            ->get()
-                            ->mapWithKeys(fn (EvaluationPeriod $p) => [$p->id => $p->full_label])
-                    )
-                    ->required()
-                    ->searchable()
-                    ->native(false),
-
-                Forms\Components\Select::make('assessment_type')
-                    ->label(trans('grades.fields.assessment_type'))
-                    ->options(AssessmentType::options())
-                    ->searchable()
-                    ->native(false),
-
-                Forms\Components\TextInput::make('value')
-                    ->label(trans('grades.fields.value'))
-                    ->required()
-                    ->numeric()
-                    ->minValue(0)
-                    ->maxValue(10)
-                    ->step(0.01)
-                    ->suffix('/10'),
-
-                Forms\Components\DatePicker::make('evaluation_date')
-                    ->label(trans('grades.fields.evaluation_date'))
-                    ->required()
-                    ->default(now())
-                    ->native(false)
-                    ->displayFormat('d/m/Y')
-                    ->maxDate(now()),
-
-                Forms\Components\Textarea::make('notes')
-                    ->label(trans('grades.fields.notes'))
-                    ->rows(3)
-                    ->columnSpanFull(),
-            ]);
+        return (string) $record->period_id;
     }
 
     public function table(Table $table): Table
     {
         return $table
-            ->recordTitleAttribute('value')
+            ->query(
+                Grade::query()
+                    ->select('period_id', DB::raw('avg(value) as value'), DB::raw('count(*) as grades_count'))
+                    ->where('student_id', $this->ownerRecord->id)
+                    ->groupBy('period_id')
+                    ->with('period')
+                    ->orderBy('period_id')
+            )
+            ->recordUrl(fn (Grade $record): string => StudentResource::getUrl('view-period-grades', [
+                'record' => $this->ownerRecord,
+                'periodId' => $record->period_id,
+            ]))
             ->columns([
                 Tables\Columns\TextColumn::make('period.name')
                     ->label(trans('grades.fields.evaluation_period'))
                     ->badge()
-                    ->formatStateUsing(fn ($state, $record) => $record->period?->name_label)
+                    ->color('primary')
+                    ->formatStateUsing(fn ($state, Grade $record): string => $record->period?->name_label ?? '—')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('period.academic_year')
@@ -89,67 +57,83 @@ class GradesRelationManager extends RelationManager
                     ->color('info')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('assessment_type')
-                    ->label(trans('grades.fields.assessment_type'))
-                    ->badge()
-                    ->color('gray')
-                    ->formatStateUsing(function (?string $state): ?string {
-                        if (! $state) {
-                            return null;
-                        }
-
-                        return AssessmentType::tryFrom($state)?->label() ?? $state;
-                    })
-                    ->placeholder('—'),
-
                 Tables\Columns\TextColumn::make('value')
-                    ->label(trans('grades.fields.value'))
+                    ->label(trans('grades.average'))
                     ->badge()
                     ->color(fn ($state) => match (true) {
                         $state < 6.0 => 'danger',
                         $state < 8.0 => 'warning',
                         default => 'success',
                     })
-                    ->formatStateUsing(fn ($state) => number_format($state, 2))
+                    ->formatStateUsing(fn ($state) => number_format((float) $state, 2))
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('evaluation_date')
-                    ->label(trans('grades.fields.evaluation_date'))
-                    ->date('d/m/Y')
+                Tables\Columns\TextColumn::make('grades_count')
+                    ->label(trans('grades.grades_count'))
+                    ->badge()
+                    ->color('gray')
                     ->sortable(),
-
-                Tables\Columns\TextColumn::make('notes')
-                    ->label(trans('grades.fields.notes'))
-                    ->limit(50)
-                    ->tooltip(fn ($state) => $state),
-            ])
-            ->filters([
-                Tables\Filters\SelectFilter::make('period_id')
-                    ->label(trans('grades.fields.evaluation_period'))
-                    ->options(
-                        EvaluationPeriod::query()
-                            ->orderBy('academic_year')
-                            ->orderBy('order')
-                            ->get()
-                            ->mapWithKeys(fn (EvaluationPeriod $p) => [$p->id => $p->full_label])
-                    ),
             ])
             ->headerActions([
                 CreateAction::make()
-                    ->tooltip(trans('actions.create')),
+                    ->label(trans('grades.actions.add_grade'))
+                    ->model(Grade::class)
+                    ->form([
+                        Forms\Components\Select::make('period_id')
+                            ->label(trans('grades.fields.evaluation_period'))
+                            ->options(
+                                EvaluationPeriod::query()
+                                    ->where('is_active', true)
+                                    ->orderBy('academic_year')
+                                    ->orderBy('order')
+                                    ->get()
+                                    ->mapWithKeys(fn (EvaluationPeriod $p) => [$p->id => $p->full_label])
+                            )
+                            ->required()
+                            ->native(false),
+
+                        Forms\Components\Select::make('assessment_type')
+                            ->label(trans('grades.fields.assessment_type'))
+                            ->options(AssessmentType::options())
+                            ->searchable()
+                            ->native(false),
+
+                        Forms\Components\TextInput::make('value')
+                            ->label(trans('grades.fields.value'))
+                            ->required()
+                            ->numeric()
+                            ->minValue(0)
+                            ->maxValue(10)
+                            ->step(0.01)
+                            ->suffix('/10'),
+
+                        Forms\Components\DatePicker::make('evaluation_date')
+                            ->label(trans('grades.fields.evaluation_date'))
+                            ->required()
+                            ->default(now())
+                            ->native(false)
+                            ->displayFormat('d/m/Y')
+                            ->maxDate(now()),
+
+                        Forms\Components\Textarea::make('notes')
+                            ->label(trans('grades.fields.notes'))
+                            ->rows(3)
+                            ->columnSpanFull(),
+                    ])
+                    ->mutateFormDataUsing(fn (array $data): array => array_merge($data, [
+                        'student_id' => $this->ownerRecord->id,
+                    ])),
             ])
             ->actions([
-                EditAction::make()
-                    ->tooltip(trans('actions.edit')),
-                DeleteAction::make()
-                    ->tooltip(trans('actions.delete')),
+                Action::make('viewGrades')
+                    ->label('')
+                    ->icon('heroicon-o-arrow-right')
+                    ->tooltip(trans('grades.actions.view_grades'))
+                    ->url(fn (Grade $record): string => StudentResource::getUrl('view-period-grades', [
+                        'record' => $this->ownerRecord,
+                        'periodId' => $record->period_id,
+                    ])),
             ])
-            ->bulkActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make()
-                        ->tooltip(trans('actions.delete_selected')),
-                ]),
-            ])
-            ->defaultSort('evaluation_date', 'desc');
+            ->paginated(false);
     }
 }

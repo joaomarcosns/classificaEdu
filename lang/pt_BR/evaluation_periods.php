@@ -15,14 +15,14 @@ return [
     ],
 
     'names' => [
-        'first_term' => '1º Trimestre',
-        'second_term' => '2º Trimestre',
-        'third_term' => '3º Trimestre',
+        'first_term' => '1ª Unidade',
+        'second_term' => '2ª Unidade',
+        'third_term' => '3ª Unidade',
     ],
 
     'legacy_names' => [
-        'first_term' => '1º Trimestre',
-        'second_term' => '2º Trimestre',
-        'third_term' => '3º Trimestre',
+        'first_term' => '1ª Unidade',
+        'second_term' => '2ª Unidade',
+        'third_term' => '3ª Unidade',
     ],
 ];
