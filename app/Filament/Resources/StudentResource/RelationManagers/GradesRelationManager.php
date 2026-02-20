@@ -94,15 +94,19 @@ class GradesRelationManager extends RelationManager
                     ->options(trans('grades.periods')),
             ])
             ->headerActions([
-                CreateAction::make(),
+                CreateAction::make()
+                    ->tooltip('Criar'),
             ])
             ->actions([
-                EditAction::make(),
-                DeleteAction::make(),
+                EditAction::make()
+                    ->tooltip('Editar'),
+                DeleteAction::make()
+                    ->tooltip('Excluir'),
             ])
             ->bulkActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->tooltip('Excluir selecionados'),
                 ]),
             ])
             ->defaultSort('evaluation_date', 'desc');

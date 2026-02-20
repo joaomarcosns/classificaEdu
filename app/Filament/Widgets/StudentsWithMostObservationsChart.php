@@ -104,6 +104,7 @@ class StudentsWithMostObservationsChart extends BaseWidget
                     ->label('Ver Detalhes')
                     ->icon('heroicon-o-eye')
                     ->color('primary')
+                    ->tooltip('Visualizar detalhes do aluno')
                     ->url(fn (Student $record): string => route('filament.admin.resources.students.view', ['record' => $record])),
             ])
             ->defaultPaginationPageOption(10)

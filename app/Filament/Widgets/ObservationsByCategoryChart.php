@@ -111,9 +111,10 @@ class ObservationsByCategoryChart extends BaseWidget
             ])
             ->actions([
                 Tables\Actions\Action::make('viewObservations')
-                    ->label('Ver Observacoes')
+                    ->label('')
                     ->icon('heroicon-o-document-text')
                     ->color('primary')
+                    ->tooltip(trans('actions.view_observations'))
                     ->url(fn ($record): string => route('filament.admin.resources.observations.index', [
                         'tableFilters' => [
                             'category' => ['value' => $record->category],

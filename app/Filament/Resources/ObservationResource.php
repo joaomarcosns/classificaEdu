@@ -160,13 +160,21 @@ class ObservationResource extends Resource
                     ->options(trans('observations.sentiments')),
             ])
             ->actions([
-                ViewAction::make(),
-                EditAction::make(),
-                DeleteAction::make(),
+                ViewAction::make()
+                    ->label('')
+                    ->tooltip(trans('actions.view')),
+                EditAction::make()
+                    ->label('')
+                    ->tooltip(trans('actions.edit')),
+                DeleteAction::make()
+                    ->label('')
+                    ->tooltip(trans('actions.delete')),
             ])
             ->bulkActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->label('')
+                        ->tooltip(trans('actions.delete_selected')),
                 ]),
             ])
             ->defaultSort('observation_date', 'desc');

@@ -103,6 +103,7 @@ class GradesByPeriodChart extends BaseWidget
                     ->label('Ver Notas')
                     ->icon('heroicon-o-document-chart-bar')
                     ->color('primary')
+                    ->tooltip('Visualizar notas deste período')
                     ->url(fn ($record): string => route('filament.admin.resources.grades.index', [
                         'tableFilters' => [
                             'evaluation_period' => ['value' => $record->evaluation_period],

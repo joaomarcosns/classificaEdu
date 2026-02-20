@@ -127,16 +127,21 @@ class ObservationsRelationManager extends RelationManager
                     ->options(trans('observations.sentiments')),
             ])
             ->headerActions([
-                CreateAction::make(),
+                CreateAction::make()
+                    ->tooltip('Criar'),
             ])
             ->actions([
-                ViewAction::make(),
-                EditAction::make(),
-                DeleteAction::make(),
+                ViewAction::make()
+                    ->tooltip('Visualizar'),
+                EditAction::make()
+                    ->tooltip('Editar'),
+                DeleteAction::make()
+                    ->tooltip('Excluir'),
             ])
             ->bulkActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->tooltip('Excluir selecionados'),
                 ]),
             ])
             ->defaultSort('observation_date', 'desc');

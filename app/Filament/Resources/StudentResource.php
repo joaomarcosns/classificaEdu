@@ -148,12 +148,18 @@ class StudentResource extends Resource
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
-                ViewAction::make(),
-                EditAction::make(),
-                DeleteAction::make(),
+                ViewAction::make()
+                    ->label('')
+                    ->tooltip(trans('actions.view')),
+                EditAction::make()
+                    ->label('')
+                    ->tooltip(trans('actions.edit')),
+                DeleteAction::make()
+                    ->label('')
+                    ->tooltip(trans('actions.delete')),
 
                 Action::make('recalculate')
-                    ->label(trans('students.actions.recalculate'))
+                    ->label('') 
                     ->icon('heroicon-o-arrow-path')
                     ->color('info')
                     ->action(function (Student $record) {
@@ -163,14 +169,15 @@ class StudentResource extends Resource
                             ->success()
                             ->title(trans('students.messages.classification_recalculated'))
                             ->send();
-                    }),
+                    })->tooltip(trans('students.actions.recalculate')),
             ])
             ->bulkActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->tooltip(trans('actions.delete_selected')),
 
                     BulkAction::make('recalculate_bulk')
-                        ->label(trans('students.actions.recalculate_bulk'))
+                        ->label(trans('actions.recalculate_bulk'))
                         ->icon('heroicon-o-arrow-path')
                         ->color('info')
                         ->action(function ($records) {
@@ -187,7 +194,8 @@ class StudentResource extends Resource
                                 ->title(trans('students.messages.classifications_recalculated', ['count' => $count]))
                                 ->send();
                         })
-                        ->deselectRecordsAfterCompletion(),
+                        ->deselectRecordsAfterCompletion()
+                        ->tooltip(trans('actions.recalculate_bulk')),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');

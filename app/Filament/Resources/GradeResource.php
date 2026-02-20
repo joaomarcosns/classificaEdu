@@ -150,12 +150,18 @@ class GradeResource extends Resource
                     }),
             ])
             ->actions([
-                EditAction::make(),
-                DeleteAction::make(),
+                EditAction::make()
+                    ->label('')
+                    ->tooltip(trans('actions.edit')),
+                DeleteAction::make()
+                    ->label('')
+                    ->tooltip(trans('actions.delete')),
             ])
             ->bulkActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->label('')
+                        ->tooltip(trans('actions.delete_selected')),
                 ]),
             ])
             ->defaultSort('evaluation_date', 'desc');
