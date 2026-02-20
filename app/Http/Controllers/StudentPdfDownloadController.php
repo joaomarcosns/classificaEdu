@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Student;
+use Illuminate\Support\Str;
+
 use function Spatie\LaravelPdf\Support\pdf;
 
 class StudentPdfDownloadController extends Controller
@@ -13,7 +15,7 @@ class StudentPdfDownloadController extends Controller
 
         return pdf()
             ->view('docs.pdf.student', ['student' => $student])
-            ->name('student_' . $student->id . '.pdf')
+            ->name('student_' . Str::slug($student->name) . '.pdf')
             ->download();
     }
 }
