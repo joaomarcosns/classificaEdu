@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\ClassificationLevel;
 use App\Models\Student;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -27,9 +28,9 @@ class StudentClassificationFactory extends Factory
             'evaluation_period' => 'current',
             'classification_date' => now(),
             'metadata' => [
-                'trimestre_1' => fake()->randomFloat(2, 0, 10),
-                'trimestre_2' => fake()->randomFloat(2, 0, 10),
-                'trimestre_3' => fake()->randomFloat(2, 0, 10),
+                'term_1' => fake()->randomFloat(2, 0, 10),
+                'term_2' => fake()->randomFloat(2, 0, 10),
+                'term_3' => fake()->randomFloat(2, 0, 10),
             ],
         ];
     }
@@ -40,13 +41,13 @@ class StudentClassificationFactory extends Factory
     protected function getClassificationLevel(float $average): string
     {
         if ($average < 6.0) {
-            return 'basico';
+            return ClassificationLevel::Basic->value;
         }
 
         if ($average < 8.0) {
-            return 'intermediario';
+            return ClassificationLevel::Intermediate->value;
         }
 
-        return 'avancado';
+        return ClassificationLevel::Advanced->value;
     }
 }

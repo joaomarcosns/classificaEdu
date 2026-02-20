@@ -2,6 +2,8 @@
 
 namespace App\Filament\Widgets;
 
+use App\Enums\GradeLevel;
+use App\Models\EvaluationPeriod;
 use App\Models\Grade;
 use App\Models\Student;
 use Filament\Tables;
@@ -14,13 +16,13 @@ use Illuminate\Support\Facades\DB;
 
 class GradesByPeriodChart extends BaseWidget
 {
-    protected static ?string $heading = 'Tabela: Media por periodo';
+    protected static ?string $heading = null;
 
     protected static ?int $sort = 2;
 
     public function getTableRecordKey($record): string
     {
-        return (string) $record->evaluation_period;
+        return (string) $record->period_id;
     }
 
     public function table(Table $table): Table
@@ -28,21 +30,27 @@ class GradesByPeriodChart extends BaseWidget
         return $table
             ->query(
                 Grade::query()
-                    ->select('evaluation_period', DB::raw('avg(value) as average'), DB::raw('count(*) as total_grades'))
-                    ->groupBy('evaluation_period')
-                    ->orderBy('evaluation_period')
+                    ->select('period_id', DB::raw('avg(value) as average'), DB::raw('count(*) as total_grades'))
+                    ->groupBy('period_id')
+                    ->orderBy('period_id')
             )
             ->columns([
-                TextColumn::make('evaluation_period')
-                    ->label('Periodo')
-                    ->formatStateUsing(fn ($state) => trans("grades.periods.{$state}"))
+                TextColumn::make('period.name')
+                    ->label(trans('widgets.grades_by_period.period'))
                     ->badge()
                     ->color('info')
+                    ->formatStateUsing(fn ($state, $record) => $record->period?->name_label)
                     ->icon('heroicon-o-calendar')
                     ->sortable(),
 
+                TextColumn::make('period.academic_year')
+                    ->label('Ano Letivo')
+                    ->badge()
+                    ->color('gray')
+                    ->sortable(),
+
                 TextColumn::make('average')
-                    ->label('Media')
+                    ->label(trans('widgets.grades_by_period.average'))
                     ->numeric(decimalPlaces: 2)
                     ->badge()
                     ->color(fn ($state) => match (true) {
@@ -53,32 +61,42 @@ class GradesByPeriodChart extends BaseWidget
                     ->sortable(),
 
                 TextColumn::make('total_grades')
-                    ->label('Total de Notas')
+                    ->label(trans('widgets.grades_by_period.total_grades'))
                     ->numeric()
                     ->badge()
                     ->color('gray')
                     ->sortable(),
             ])
             ->filters([
+                SelectFilter::make('period_id')
+                    ->label(trans('widgets.grades_by_period.period'))
+                    ->options(
+                        EvaluationPeriod::query()
+                            ->orderBy('academic_year')
+                            ->orderBy('order')
+                            ->get()
+                            ->mapWithKeys(fn (EvaluationPeriod $p) => [$p->id => $p->full_label])
+                    ),
+
                 SelectFilter::make('grade_level')
-                    ->label('Serie')
-                    ->options(fn () => trans('students.grade_levels'))
+                    ->label(trans('widgets.grades_by_period.grade_level'))
+                    ->options(fn () => GradeLevel::options())
                     ->query(function (Builder $query, array $data): Builder {
                         if (! $data['value']) {
                             return $query;
                         }
 
-                        return $query->whereIn('evaluation_period', function ($subQuery) use ($data) {
-                            $subQuery->select('grades.evaluation_period')
+                        return $query->whereIn('period_id', function ($subQuery) use ($data) {
+                            $subQuery->select('grades.period_id')
                                 ->from('grades')
                                 ->join('students', 'grades.student_id', '=', 'students.id')
                                 ->where('students.grade_level', $data['value'])
-                                ->groupBy('grades.evaluation_period');
+                                ->groupBy('grades.period_id');
                         });
                     }),
 
                 SelectFilter::make('class_name')
-                    ->label('Turma')
+                    ->label(trans('widgets.grades_by_period.class_name'))
                     ->options(fn () => Student::query()
                         ->whereNotNull('class_name')
                         ->distinct()
@@ -89,27 +107,32 @@ class GradesByPeriodChart extends BaseWidget
                             return $query;
                         }
 
-                        return $query->whereIn('evaluation_period', function ($subQuery) use ($data) {
-                            $subQuery->select('grades.evaluation_period')
+                        return $query->whereIn('period_id', function ($subQuery) use ($data) {
+                            $subQuery->select('grades.period_id')
                                 ->from('grades')
                                 ->join('students', 'grades.student_id', '=', 'students.id')
                                 ->where('students.class_name', $data['value'])
-                                ->groupBy('grades.evaluation_period');
+                                ->groupBy('grades.period_id');
                         });
                     }),
             ])
             ->actions([
                 Tables\Actions\Action::make('viewGrades')
-                    ->label('Ver Notas')
+                    ->label(trans('widgets.grades_by_period.view_grades'))
                     ->icon('heroicon-o-document-chart-bar')
                     ->color('primary')
-                    ->tooltip('Visualizar notas deste período')
+                    ->tooltip(trans('widgets.grades_by_period.view_grades_tooltip'))
                     ->url(fn ($record): string => route('filament.admin.resources.grades.index', [
                         'tableFilters' => [
-                            'evaluation_period' => ['value' => $record->evaluation_period],
+                            'period_id' => ['value' => $record->period_id],
                         ],
                     ])),
             ])
             ->paginated(false);
+    }
+
+    public function getHeading(): ?string
+    {
+        return trans('widgets.grades_by_period.heading');
     }
 }

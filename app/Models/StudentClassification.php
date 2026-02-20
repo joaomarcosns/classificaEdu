@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ClassificationLevel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -36,6 +37,7 @@ class StudentClassification extends Model
             'overall_average' => 'decimal:2',
             'classification_date' => 'datetime',
             'metadata' => 'array',
+            'classification_level' => ClassificationLevel::class,
         ];
     }
 
@@ -47,17 +49,13 @@ class StudentClassification extends Model
         return $this->belongsTo(Student::class);
     }
 
-    /**
-     * Get the pt-BR level label.
-     */
     public function getLevelLabelAttribute(): string
     {
-        return match ($this->classification_level) {
-            'basico' => 'Básico',
-            'intermediario' => 'Intermediário',
-            'avancado' => 'Avançado',
-            default => 'N/A',
-        };
+        if ($this->classification_level instanceof ClassificationLevel) {
+            return $this->classification_level->label();
+        }
+
+        return ClassificationLevel::tryFrom((string) $this->classification_level)?->label() ?? 'N/A';
     }
 
     /**
@@ -65,11 +63,10 @@ class StudentClassification extends Model
      */
     public function getLevelColorAttribute(): string
     {
-        return match ($this->classification_level) {
-            'basico' => 'danger',
-            'intermediario' => 'warning',
-            'avancado' => 'success',
-            default => 'gray',
-        };
+        if ($this->classification_level instanceof ClassificationLevel) {
+            return $this->classification_level->color();
+        }
+
+        return ClassificationLevel::tryFrom((string) $this->classification_level)?->color() ?? 'gray';
     }
 }

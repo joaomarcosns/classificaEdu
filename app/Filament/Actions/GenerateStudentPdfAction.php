@@ -17,9 +17,9 @@ class GenerateStudentPdfAction extends Action
         parent::setUp();
 
         $this
-            ->label('Gerar PDF')
+            ->label(trans('actions.generate_pdf'))
             ->icon('heroicon-o-document')
             ->color('info')
-            ->url(fn(Student $record): string => route('students.pdf.download', $record));
+            ->url(fn (Student $record): string => route('students.pdf.download', $record));
     }
 }

@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\ClassificationLevel;
+use App\Enums\GradeLevel;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -38,6 +40,7 @@ class Student extends Model
         return [
             'date_of_birth' => 'date',
             'is_active' => 'boolean',
+            'grade_level' => GradeLevel::class,
         ];
     }
 
@@ -76,9 +79,9 @@ class Student extends Model
     /**
      * Scope a query to filter by grade level.
      */
-    public function scopeByGradeLevel(Builder $query, string $level): void
+    public function scopeByGradeLevel(Builder $query, GradeLevel|string $level): void
     {
-        $query->where('grade_level', $level);
+        $query->where('grade_level', $level instanceof GradeLevel ? $level->value : $level);
     }
 
     /**
@@ -100,12 +103,12 @@ class Student extends Model
     /**
      * Calculate the student's current average for a given period.
      */
-    public function calculateCurrentAverage(?string $period = null): float
+    public function calculateCurrentAverage(?int $periodId = null): float
     {
         $query = $this->grades();
 
-        if ($period) {
-            $query->where('evaluation_period', $period);
+        if ($periodId) {
+            $query->where('period_id', $periodId);
         }
 
         return (float) $query->avg('value') ?? 0.0;
@@ -116,14 +119,30 @@ class Student extends Model
      */
     public function getClassificationLevel(): string
     {
-        return $this->classification?->classification_level ?? 'basico';
+        $level = $this->classification?->classification_level;
+
+        if ($level instanceof ClassificationLevel) {
+            return $level->value;
+        }
+
+        return ClassificationLevel::tryFrom((string) $level)?->value ?? ClassificationLevel::Basic->value;
+    }
+
+    public function getGradeLevelLabelAttribute(): string
+    {
+        if ($this->grade_level instanceof GradeLevel) {
+            return $this->grade_level->label();
+        }
+
+        return GradeLevel::tryFrom((string) $this->grade_level)?->label()
+            ?? trans("students.grade_levels.{$this->grade_level}");
     }
 
     /**
      * Check if student has grade for a given period.
      */
-    public function hasGradeForPeriod(string $period): bool
+    public function hasGradeForPeriod(int $periodId): bool
     {
-        return $this->grades()->where('evaluation_period', $period)->exists();
+        return $this->grades()->where('period_id', $periodId)->exists();
     }
 }

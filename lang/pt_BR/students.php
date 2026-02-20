@@ -31,15 +31,15 @@ return [
     ],
 
     'grade_levels' => [
-        '1º ano' => '1º ano',
-        '2º ano' => '2º ano',
-        '3º ano' => '3º ano',
-        '4º ano' => '4º ano',
-        '5º ano' => '5º ano',
-        '6º ano' => '6º ano',
-        '7º ano' => '7º ano',
-        '8º ano' => '8º ano',
-        '9º ano' => '9º ano',
+        'year_1' => '1º ano',
+        'year_2' => '2º ano',
+        'year_3' => '3º ano',
+        'year_4' => '4º ano',
+        'year_5' => '5º ano',
+        'year_6' => '6º ano',
+        'year_7' => '7º ano',
+        'year_8' => '8º ano',
+        'year_9' => '9º ano',
     ],
 
     'sections' => [
@@ -51,5 +51,17 @@ return [
     'messages' => [
         'classification_recalculated' => 'Classificação recalculada com sucesso!',
         'classifications_recalculated' => ':count classificações recalculadas com sucesso!',
+    ],
+
+    'legacy_grade_levels' => [
+        'year_1' => '1º ano',
+        'year_2' => '2º ano',
+        'year_3' => '3º ano',
+        'year_4' => '4º ano',
+        'year_5' => '5º ano',
+        'year_6' => '6º ano',
+        'year_7' => '7º ano',
+        'year_8' => '8º ano',
+        'year_9' => '9º ano',
     ],
 ];

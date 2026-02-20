@@ -17,11 +17,11 @@ class StudentsOverview extends StatsOverviewWidget
         $averageGrade = (float) Grade::query()->avg('value');
 
         return [
-            Stat::make('Alunos', Student::query()->count()),
-            Stat::make('Alunos ativos', Student::query()->where('is_active', true)->count()),
-            Stat::make('Notas', Grade::query()->count()),
-            Stat::make('Observacoes', Observation::query()->count()),
-            Stat::make('Media geral', number_format($averageGrade, 2)),
+            Stat::make(trans('widgets.students_overview.students'), Student::query()->count()),
+            Stat::make(trans('widgets.students_overview.active_students'), Student::query()->where('is_active', true)->count()),
+            Stat::make(trans('widgets.students_overview.grades'), Grade::query()->count()),
+            Stat::make(trans('widgets.students_overview.observations'), Observation::query()->count()),
+            Stat::make(trans('widgets.students_overview.average_grade'), number_format($averageGrade, 2)),
         ];
     }
 

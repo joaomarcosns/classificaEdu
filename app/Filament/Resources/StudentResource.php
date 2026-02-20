@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\GradeLevel;
 use App\Filament\Resources\StudentResource\Pages;
 use App\Filament\Resources\StudentResource\RelationManagers\GradesRelationManager;
 use App\Filament\Resources\StudentResource\RelationManagers\ObservationsRelationManager;
@@ -21,7 +22,6 @@ use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Actions\ViewAction;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class StudentResource extends Resource
 {
@@ -29,7 +29,7 @@ class StudentResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
 
-    protected static ?string $navigationGroup = 'Gestão de Alunos';
+    protected static ?string $navigationGroup = null;
 
     protected static ?int $navigationSort = 1;
 
@@ -46,6 +46,11 @@ class StudentResource extends Resource
     public static function getNavigationLabel(): string
     {
         return trans('students.navigation_label');
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return trans('students.navigation_group');
     }
 
     public static function form(Form $form): Form
@@ -73,7 +78,7 @@ class StudentResource extends Resource
 
                         Forms\Components\Select::make('grade_level')
                             ->label(trans('students.fields.grade_level'))
-                            ->options(trans('students.grade_levels'))
+                            ->options(GradeLevel::options())
                             ->required()
                             ->searchable(),
 
@@ -105,6 +110,7 @@ class StudentResource extends Resource
 
                 Tables\Columns\TextColumn::make('grade_level')
                     ->label(trans('students.fields.grade_level'))
+                    ->formatStateUsing(fn ($state, $record) => $record->grade_level_label)
                     ->sortable()
                     ->badge(),
 
@@ -116,7 +122,7 @@ class StudentResource extends Resource
                 Tables\Columns\TextColumn::make('classification.level_label')
                     ->label(trans('students.sections.classification'))
                     ->badge()
-                    ->color(fn($record) => $record->classification?->level_color ?? 'gray')
+                    ->color(fn ($record) => $record->classification?->level_color ?? 'gray')
                     ->default('N/A'),
 
                 Tables\Columns\IconColumn::make('is_active')
@@ -133,11 +139,11 @@ class StudentResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('grade_level')
                     ->label(trans('students.fields.grade_level'))
-                    ->options(trans('students.grade_levels')),
+                    ->options(GradeLevel::options()),
 
                 Tables\Filters\SelectFilter::make('class_name')
                     ->label(trans('students.fields.class_name'))
-                    ->options(fn() => Student::query()->distinct()->pluck('class_name', 'class_name')),
+                    ->options(fn () => Student::query()->distinct()->pluck('class_name', 'class_name')),
 
                 Tables\Filters\TernaryFilter::make('is_active')
                     ->label(trans('students.fields.is_active'))
@@ -159,7 +165,7 @@ class StudentResource extends Resource
                     ->tooltip(trans('actions.delete')),
 
                 Action::make('recalculate')
-                    ->label('') 
+                    ->label('')
                     ->icon('heroicon-o-arrow-path')
                     ->color('info')
                     ->action(function (Student $record) {

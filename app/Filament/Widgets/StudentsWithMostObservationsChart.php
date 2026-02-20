@@ -2,7 +2,9 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\Observation;
+use App\Enums\GradeLevel;
+use App\Enums\ObservationCategory;
+use App\Enums\ObservationSentiment;
 use App\Models\Student;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
@@ -14,11 +16,11 @@ use Illuminate\Support\Facades\DB;
 
 class StudentsWithMostObservationsChart extends BaseWidget
 {
-    protected static ?string $heading = 'Tabela: Alunos com mais observacoes';
+    protected static ?string $heading = null;
 
     protected static ?int $sort = 4;
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     public function table(Table $table): Table
     {
@@ -33,28 +35,28 @@ class StudentsWithMostObservationsChart extends BaseWidget
             )
             ->columns([
                 TextColumn::make('name')
-                    ->label('Nome')
+                    ->label(trans('students.fields.name'))
                     ->searchable()
                     ->sortable()
                     ->weight('bold')
                     ->icon('heroicon-o-user'),
 
                 TextColumn::make('grade_level')
-                    ->label('Serie')
-                    ->formatStateUsing(fn ($state) => trans("students.grade_levels.{$state}"))
+                    ->label(trans('widgets.students_with_most_observations.grade_level'))
+                    ->formatStateUsing(fn ($state, $record) => $record->grade_level_label)
                     ->badge()
                     ->color('info')
                     ->sortable(),
 
                 TextColumn::make('class_name')
-                    ->label('Turma')
+                    ->label(trans('widgets.students_with_most_observations.class_name'))
                     ->badge()
                     ->color('success')
                     ->sortable()
                     ->searchable(),
 
                 TextColumn::make('observations_count')
-                    ->label('Total de Observacoes')
+                    ->label(trans('widgets.students_with_most_observations.total_observations'))
                     ->numeric()
                     ->sortable()
                     ->badge()
@@ -62,8 +64,8 @@ class StudentsWithMostObservationsChart extends BaseWidget
             ])
             ->filters([
                 SelectFilter::make('category')
-                    ->label('Categoria')
-                    ->options(fn () => trans('observations.categories'))
+                    ->label(trans('observations.fields.category'))
+                    ->options(fn () => ObservationCategory::options())
                     ->query(function (Builder $query, array $data): Builder {
                         return $query->when(
                             $data['value'],
@@ -75,8 +77,8 @@ class StudentsWithMostObservationsChart extends BaseWidget
                     }),
 
                 SelectFilter::make('sentiment')
-                    ->label('Sentimento')
-                    ->options(fn () => trans('observations.sentiments'))
+                    ->label(trans('observations.fields.sentiment'))
+                    ->options(fn () => ObservationSentiment::options())
                     ->query(function (Builder $query, array $data): Builder {
                         return $query->when(
                             $data['value'],
@@ -88,11 +90,11 @@ class StudentsWithMostObservationsChart extends BaseWidget
                     }),
 
                 SelectFilter::make('grade_level')
-                    ->label('Serie')
-                    ->options(fn () => trans('students.grade_levels')),
+                    ->label(trans('widgets.students_with_most_observations.grade_level'))
+                    ->options(fn () => GradeLevel::options()),
 
                 SelectFilter::make('class_name')
-                    ->label('Turma')
+                    ->label(trans('widgets.students_with_most_observations.class_name'))
                     ->options(fn () => Student::query()
                         ->whereNotNull('class_name')
                         ->distinct()
@@ -101,13 +103,18 @@ class StudentsWithMostObservationsChart extends BaseWidget
             ])
             ->actions([
                 Tables\Actions\Action::make('view')
-                    ->label('Ver Detalhes')
+                    ->label(trans('widgets.students_with_most_observations.view_details'))
                     ->icon('heroicon-o-eye')
                     ->color('primary')
-                    ->tooltip('Visualizar detalhes do aluno')
+                    ->tooltip(trans('widgets.students_with_most_observations.view_student_tooltip'))
                     ->url(fn (Student $record): string => route('filament.admin.resources.students.view', ['record' => $record])),
             ])
             ->defaultPaginationPageOption(10)
             ->poll('30s');
+    }
+
+    public function getHeading(): ?string
+    {
+        return trans('widgets.students_with_most_observations.heading');
     }
 }

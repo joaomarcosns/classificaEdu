@@ -18,9 +18,10 @@ class Grade extends Model
      */
     protected $fillable = [
         'student_id',
+        'period_id',
+        'assessment_type',
         'value',
         'evaluation_date',
-        'evaluation_period',
         'notes',
     ];
 
@@ -43,5 +44,13 @@ class Grade extends Model
     public function student(): BelongsTo
     {
         return $this->belongsTo(Student::class);
+    }
+
+    /**
+     * Get the evaluation period for this grade.
+     */
+    public function period(): BelongsTo
+    {
+        return $this->belongsTo(EvaluationPeriod::class, 'period_id');
     }
 }

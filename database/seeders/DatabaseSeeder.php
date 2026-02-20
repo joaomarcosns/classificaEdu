@@ -20,12 +20,12 @@ class DatabaseSeeder extends Seeder
     {
         // Create test user
         $user = User::factory()->create([
-            'name' => 'Professor Teste',
+            'name' => 'Test Teacher',
             'email' => 'test@example.com',
         ]);
 
         // Create students with varied data
-        // 3 students with high grades (avançado)
+        // 3 students with high grades (advanced)
         Student::factory()
             ->count(3)
             ->withHighGrades()
@@ -41,15 +41,15 @@ class DatabaseSeeder extends Seeder
                     ]);
             });
 
-        // 4 students with intermediate grades (intermediário)
+        // 4 students with intermediate grades (intermediate)
         Student::factory()
             ->count(4)
             ->create()
             ->each(function (Student $student) use ($user) {
-                // Create intermediate grades for each trimester
-                Grade::factory()->intermediario()->trimestre(1)->create(['student_id' => $student->id]);
-                Grade::factory()->intermediario()->trimestre(2)->create(['student_id' => $student->id]);
-                Grade::factory()->intermediario()->trimestre(3)->create(['student_id' => $student->id]);
+                // Create intermediate grades for each term
+                Grade::factory()->intermediate()->term(1)->create(['student_id' => $student->id]);
+                Grade::factory()->intermediate()->term(2)->create(['student_id' => $student->id]);
+                Grade::factory()->intermediate()->term(3)->create(['student_id' => $student->id]);
 
                 // Add mixed observations
                 Observation::factory()
@@ -60,7 +60,7 @@ class DatabaseSeeder extends Seeder
                     ]);
             });
 
-        // 3 students with low grades (básico)
+        // 3 students with low grades (basic)
         Student::factory()
             ->count(3)
             ->withLowGrades()

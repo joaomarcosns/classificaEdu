@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Enums\AssessmentType;
+use App\Models\EvaluationPeriod;
 use App\Models\Student;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -19,17 +21,20 @@ class GradeFactory extends Factory
     {
         return [
             'student_id' => Student::factory(),
+            'period_id' => EvaluationPeriod::factory(),
+            'assessment_type' => fake()->optional()->randomElement(
+                array_map(fn (AssessmentType $type) => $type->value, AssessmentType::cases())
+            ),
             'value' => fake()->randomFloat(2, 0, 10),
             'evaluation_date' => fake()->dateTimeThisYear(),
-            'evaluation_period' => fake()->randomElement(['trimestre_1', 'trimestre_2', 'trimestre_3', 'final']),
             'notes' => fake()->optional()->sentence(),
         ];
     }
 
     /**
-     * Indicate that the grade is in the básico range (0.0-5.9).
+     * Indicate that the grade is in the basic range (0.0-5.9).
      */
-    public function basico(): static
+    public function basic(): static
     {
         return $this->state(fn (array $attributes) => [
             'value' => fake()->randomFloat(2, 0, 5.9),
@@ -37,9 +42,9 @@ class GradeFactory extends Factory
     }
 
     /**
-     * Indicate that the grade is in the intermediário range (6.0-7.9).
+     * Indicate that the grade is in the intermediate range (6.0-7.9).
      */
-    public function intermediario(): static
+    public function intermediate(): static
     {
         return $this->state(fn (array $attributes) => [
             'value' => fake()->randomFloat(2, 6.0, 7.9),
@@ -47,9 +52,9 @@ class GradeFactory extends Factory
     }
 
     /**
-     * Indicate that the grade is in the avançado range (8.0-10.0).
+     * Indicate that the grade is in the advanced range (8.0-10.0).
      */
-    public function avancado(): static
+    public function advanced(): static
     {
         return $this->state(fn (array $attributes) => [
             'value' => fake()->randomFloat(2, 8.0, 10.0),
@@ -57,12 +62,16 @@ class GradeFactory extends Factory
     }
 
     /**
-     * Set the grade for a specific trimester.
+     * Set the grade for a specific term order within the current year.
      */
-    public function trimestre(int $number): static
+    public function term(int $number): static
     {
         return $this->state(fn (array $attributes) => [
-            'evaluation_period' => "trimestre_{$number}",
+            'period_id' => EvaluationPeriod::query()
+                ->where('academic_year', now()->year)
+                ->where('order', $number)
+                ->value('id')
+                ?? EvaluationPeriod::factory()->create(['order' => $number, 'academic_year' => now()->year])->id,
         ]);
     }
 }

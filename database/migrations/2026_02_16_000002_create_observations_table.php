@@ -16,15 +16,8 @@ return new class extends Migration
             $table->foreignId('student_id')->constrained()->cascadeOnDelete();
             $table->foreignId('user_id')->constrained();
             $table->date('observation_date');
-            $table->enum('category', [
-                'comportamento',
-                'participacao',
-                'cooperacao',
-                'responsabilidade',
-                'interacao_social',
-                'outro',
-            ]);
-            $table->enum('sentiment', ['positivo', 'neutro', 'preocupante']);
+            $table->string('category')->default('other');
+            $table->string('sentiment')->default('neutral');
             $table->longText('description');
             $table->boolean('is_private')->default(false);
             $table->timestamps();

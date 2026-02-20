@@ -2,12 +2,14 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\ObservationCategory;
+use App\Enums\ObservationSentiment;
 use App\Filament\Resources\ObservationResource\Pages;
 use App\Models\Observation;
 use App\Models\Student;
 use Filament\Forms;
-use Filament\Resources\Resource;
 use Filament\Forms\Form;
+use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Actions\BulkActionGroup;
 use Filament\Tables\Actions\DeleteAction;
@@ -22,7 +24,7 @@ class ObservationResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
 
-    protected static ?string $navigationGroup = 'Gestão de Alunos';
+    protected static ?string $navigationGroup = null;
 
     protected static ?int $navigationSort = 3;
 
@@ -39,6 +41,11 @@ class ObservationResource extends Resource
     public static function getNavigationLabel(): string
     {
         return trans('observations.navigation_label');
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return trans('observations.navigation_group');
     }
 
     public static function form(Form $form): Form
@@ -62,13 +69,13 @@ class ObservationResource extends Resource
 
                 Forms\Components\Select::make('category')
                     ->label(trans('observations.fields.category'))
-                    ->options(trans('observations.categories'))
+                    ->options(ObservationCategory::options())
                     ->required()
                     ->native(false),
 
                 Forms\Components\Select::make('sentiment')
                     ->label(trans('observations.fields.sentiment'))
-                    ->options(trans('observations.sentiments'))
+                    ->options(ObservationSentiment::options())
                     ->required()
                     ->native(false),
 
@@ -109,37 +116,44 @@ class ObservationResource extends Resource
 
                 Tables\Columns\TextColumn::make('category')
                     ->label(trans('observations.fields.category'))
-                    ->formatStateUsing(fn($state) => trans("observations.categories.{$state}"))
+                    ->formatStateUsing(function ($state): string {
+                        if ($state instanceof ObservationCategory) {
+                            return $state->label();
+                        }
+
+                        return ObservationCategory::tryFrom((string) $state)?->label() ?? (string) $state;
+                    })
                     ->badge()
-                    ->color(fn($state) => match ($state) {
-                        'comportamento' => 'info',
-                        'participacao' => 'success',
-                        'cooperacao' => 'primary',
-                        'responsabilidade' => 'warning',
-                        'interacao_social' => 'indigo',
-                        default => 'gray',
+                    ->color(function ($state): string {
+                        if ($state instanceof ObservationCategory) {
+                            return $state->color();
+                        }
+
+                        return ObservationCategory::tryFrom((string) $state)?->color() ?? 'gray';
                     }),
 
                 Tables\Columns\IconColumn::make('sentiment')
                     ->label(trans('observations.fields.sentiment'))
-                    ->icon(fn($state) => match ($state) {
-                        'positivo' => 'heroicon-o-check-circle',
-                        'neutro' => 'heroicon-o-minus-circle',
-                        'preocupante' => 'heroicon-o-exclamation-triangle',
-                        default => 'heroicon-o-question-mark-circle',
+                    ->icon(function ($state): string {
+                        if ($state instanceof ObservationSentiment) {
+                            return $state->icon();
+                        }
+
+                        return ObservationSentiment::tryFrom((string) $state)?->icon() ?? 'heroicon-o-question-mark-circle';
                     })
-                    ->color(fn($state) => match ($state) {
-                        'positivo' => 'success',
-                        'neutro' => 'gray',
-                        'preocupante' => 'danger',
-                        default => 'gray',
+                    ->color(function ($state): string {
+                        if ($state instanceof ObservationSentiment) {
+                            return $state->color();
+                        }
+
+                        return ObservationSentiment::tryFrom((string) $state)?->color() ?? 'gray';
                     }),
 
                 Tables\Columns\TextColumn::make('description')
                     ->label(trans('observations.fields.description'))
                     ->html()
                     ->limit(80)
-                    ->tooltip(fn($state) => strip_tags($state)),
+                    ->tooltip(fn ($state) => strip_tags($state)),
 
                 Tables\Columns\TextColumn::make('user.name')
                     ->label(trans('observations.fields.user'))
@@ -153,11 +167,11 @@ class ObservationResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('category')
                     ->label(trans('observations.fields.category'))
-                    ->options(trans('observations.categories')),
+                    ->options(ObservationCategory::options()),
 
                 Tables\Filters\SelectFilter::make('sentiment')
                     ->label(trans('observations.fields.sentiment'))
-                    ->options(trans('observations.sentiments')),
+                    ->options(ObservationSentiment::options()),
             ])
             ->actions([
                 ViewAction::make()

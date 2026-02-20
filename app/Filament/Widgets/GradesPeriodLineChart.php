@@ -2,13 +2,12 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\Grade;
+use App\Models\EvaluationPeriod;
 use Filament\Widgets\ChartWidget;
-use Illuminate\Support\Facades\DB;
 
 class GradesPeriodLineChart extends ChartWidget
 {
-    protected static ?string $heading = 'Grafico: Media por periodo';
+    protected static ?string $heading = null;
 
     protected static ?int $sort = 7;
 
@@ -16,25 +15,20 @@ class GradesPeriodLineChart extends ChartWidget
 
     protected function getData(): array
     {
-        $grades = Grade::query()
-            ->select('evaluation_period', DB::raw('avg(value) as average'))
-            ->groupBy('evaluation_period')
-            ->orderBy('evaluation_period')
+        $periods = EvaluationPeriod::query()
+            ->whereHas('grades')
+            ->withAvg('grades as average', 'value')
+            ->orderBy('academic_year')
+            ->orderBy('order')
             ->get();
 
-        $labels = $grades->map(function ($row) {
-            $labelKey = "grades.periods.{$row->evaluation_period}";
-            $label = trans($labelKey);
-
-            return $label === $labelKey ? $row->evaluation_period : $label;
-        })->all();
-
-        $data = $grades->map(fn ($row) => round((float) $row->average, 2))->all();
+        $labels = $periods->map(fn (EvaluationPeriod $period) => $period->full_label)->all();
+        $data = $periods->map(fn (EvaluationPeriod $period) => round((float) $period->average, 2))->all();
 
         return [
             'datasets' => [
                 [
-                    'label' => 'Media',
+                    'label' => trans('widgets.grades_period_line_chart.dataset_label'),
                     'data' => $data,
                     'backgroundColor' => '#f59e0b',
                     'borderColor' => '#f59e0b',
@@ -61,5 +55,10 @@ class GradesPeriodLineChart extends ChartWidget
                 ],
             ],
         ];
+    }
+
+    public function getHeading(): ?string
+    {
+        return trans('widgets.grades_period_line_chart.heading');
     }
 }

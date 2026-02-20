@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('student_classifications', function (Blueprint $table) {
             $table->id();
             $table->foreignId('student_id')->unique()->constrained()->cascadeOnDelete();
-            $table->enum('classification_level', ['basico', 'intermediario', 'avancado']);
+            $table->string('classification_level')->default('basic');
             $table->decimal('overall_average', 4, 2);
             $table->string('evaluation_period');
             $table->timestamp('classification_date');

@@ -9,11 +9,11 @@ use Illuminate\Support\Facades\DB;
 
 class StudentsObservationsBarChart extends ChartWidget
 {
-    protected static ?string $heading = 'Grafico: Alunos com mais observacoes';
+    protected static ?string $heading = null;
 
     protected static ?int $sort = 5;
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     protected static ?string $maxHeight = '300px';
 
@@ -31,7 +31,9 @@ class StudentsObservationsBarChart extends ChartWidget
             ->pluck('name', 'id');
 
         $labels = $observations->map(function ($row) use ($studentNames) {
-            return $studentNames[$row->student_id] ?? "Aluno #{$row->student_id}";
+            return $studentNames[$row->student_id] ?? trans('widgets.students_observations_bar.student_fallback', [
+                'id' => $row->student_id,
+            ]);
         })->all();
 
         $data = $observations->map(fn ($row) => (int) $row->total)->all();
@@ -39,7 +41,7 @@ class StudentsObservationsBarChart extends ChartWidget
         return [
             'datasets' => [
                 [
-                    'label' => 'Observacoes',
+                    'label' => trans('widgets.students_observations_bar.dataset_label'),
                     'data' => $data,
                     'backgroundColor' => '#60a5fa',
                     'borderColor' => '#60a5fa',
@@ -71,5 +73,10 @@ class StudentsObservationsBarChart extends ChartWidget
                 ],
             ],
         ];
+    }
+
+    public function getHeading(): ?string
+    {
+        return trans('widgets.students_observations_bar.heading');
     }
 }

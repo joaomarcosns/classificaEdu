@@ -4,6 +4,7 @@ return [
     'model_label' => 'Observação',
     'plural_label' => 'Observações',
     'navigation_label' => 'Observações',
+    'navigation_group' => 'Gestão de Alunos',
 
     'fields' => [
         'student' => 'Aluno',
@@ -18,18 +19,18 @@ return [
     ],
 
     'categories' => [
-        'comportamento' => 'Comportamento',
-        'participacao' => 'Participação',
-        'cooperacao' => 'Cooperação',
-        'responsabilidade' => 'Responsabilidade',
-        'interacao_social' => 'Interação Social',
-        'outro' => 'Outro',
+        'behavior' => 'Comportamento',
+        'participation' => 'Participação',
+        'cooperation' => 'Cooperação',
+        'responsibility' => 'Responsabilidade',
+        'social_interaction' => 'Interação Social',
+        'other' => 'Outro',
     ],
 
     'sentiments' => [
-        'positivo' => 'Positivo',
-        'neutro' => 'Neutro',
-        'preocupante' => 'Preocupante',
+        'positive' => 'Positivo',
+        'neutral' => 'Neutro',
+        'concerning' => 'Preocupante',
     ],
 
     'sections' => [
@@ -38,5 +39,20 @@ return [
 
     'help' => [
         'is_private' => 'Observações privadas não aparecem em relatórios públicos',
+    ],
+
+    'legacy_category_map' => [
+        'behavior' => 'comportamento',
+        'participation' => 'participacao',
+        'cooperation' => 'cooperacao',
+        'responsibility' => 'responsabilidade',
+        'social_interaction' => 'interacao_social',
+        'other' => 'outro',
+    ],
+
+    'legacy_sentiment_map' => [
+        'positive' => 'positivo',
+        'neutral' => 'neutro',
+        'concerning' => 'preocupante',
     ],
 ];

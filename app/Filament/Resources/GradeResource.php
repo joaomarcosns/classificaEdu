@@ -2,12 +2,14 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\AssessmentType;
 use App\Filament\Resources\GradeResource\Pages;
+use App\Models\EvaluationPeriod;
 use App\Models\Grade;
 use App\Models\Student;
 use Filament\Forms;
-use Filament\Resources\Resource;
 use Filament\Forms\Form;
+use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Actions\BulkActionGroup;
 use Filament\Tables\Actions\DeleteAction;
@@ -21,7 +23,7 @@ class GradeResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
 
-    protected static ?string $navigationGroup = 'Gestão de Alunos';
+    protected static ?string $navigationGroup = null;
 
     protected static ?int $navigationSort = 2;
 
@@ -40,6 +42,11 @@ class GradeResource extends Resource
         return trans('grades.navigation_label');
     }
 
+    public static function getNavigationGroup(): ?string
+    {
+        return trans('grades.navigation_group');
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -51,6 +58,26 @@ class GradeResource extends Resource
                     ->searchable()
                     ->preload(),
 
+                Forms\Components\Select::make('period_id')
+                    ->label(trans('grades.fields.evaluation_period'))
+                    ->options(
+                        EvaluationPeriod::query()
+                            ->where('is_active', true)
+                            ->orderBy('academic_year')
+                            ->orderBy('order')
+                            ->get()
+                            ->mapWithKeys(fn (EvaluationPeriod $p) => [$p->id => $p->full_label])
+                    )
+                    ->required()
+                    ->searchable()
+                    ->native(false),
+
+                Forms\Components\Select::make('assessment_type')
+                    ->label(trans('grades.fields.assessment_type'))
+                    ->options(AssessmentType::options())
+                    ->searchable()
+                    ->native(false),
+
                 Forms\Components\TextInput::make('value')
                     ->label(trans('grades.fields.value'))
                     ->required()
@@ -59,12 +86,6 @@ class GradeResource extends Resource
                     ->maxValue(10)
                     ->step(0.01)
                     ->suffix('/10'),
-
-                Forms\Components\Select::make('evaluation_period')
-                    ->label(trans('grades.fields.evaluation_period'))
-                    ->options(trans('grades.periods'))
-                    ->required()
-                    ->native(false),
 
                 Forms\Components\DatePicker::make('evaluation_date')
                     ->label(trans('grades.fields.evaluation_date'))
@@ -94,21 +115,40 @@ class GradeResource extends Resource
                     ->label(trans('students.fields.registration_number'))
                     ->searchable(),
 
+                Tables\Columns\TextColumn::make('period.name')
+                    ->label(trans('grades.fields.evaluation_period'))
+                    ->badge()
+                    ->formatStateUsing(fn ($state, $record) => $record->period?->name_label)
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('period.academic_year')
+                    ->label(trans('evaluation_periods.fields.academic_year'))
+                    ->badge()
+                    ->color('info')
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('assessment_type')
+                    ->label(trans('grades.fields.assessment_type'))
+                    ->badge()
+                    ->color('gray')
+                    ->formatStateUsing(function (?string $state): ?string {
+                        if (! $state) {
+                            return null;
+                        }
+
+                        return AssessmentType::tryFrom($state)?->label() ?? $state;
+                    })
+                    ->placeholder('—'),
+
                 Tables\Columns\TextColumn::make('value')
                     ->label(trans('grades.fields.value'))
                     ->badge()
-                    ->color(fn($state) => match (true) {
+                    ->color(fn ($state) => match (true) {
                         $state < 6.0 => 'danger',
                         $state < 8.0 => 'warning',
                         default => 'success',
                     })
-                    ->formatStateUsing(fn($state) => number_format($state, 2))
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('evaluation_period')
-                    ->label(trans('grades.fields.evaluation_period'))
-                    ->formatStateUsing(fn($state) => trans("grades.periods.{$state}"))
-                    ->badge()
+                    ->formatStateUsing(fn ($state) => number_format($state, 2))
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('evaluation_date')
@@ -119,13 +159,19 @@ class GradeResource extends Resource
                 Tables\Columns\TextColumn::make('notes')
                     ->label(trans('grades.fields.notes'))
                     ->limit(50)
-                    ->tooltip(fn($state) => $state)
+                    ->tooltip(fn ($state) => $state)
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('evaluation_period')
+                Tables\Filters\SelectFilter::make('period_id')
                     ->label(trans('grades.fields.evaluation_period'))
-                    ->options(trans('grades.periods')),
+                    ->options(
+                        EvaluationPeriod::query()
+                            ->orderBy('academic_year')
+                            ->orderBy('order')
+                            ->get()
+                            ->mapWithKeys(fn (EvaluationPeriod $p) => [$p->id => $p->full_label])
+                    ),
 
                 Tables\Filters\Filter::make('value_range')
                     ->form([
@@ -139,13 +185,13 @@ class GradeResource extends Resource
                     ->query(function ($query, array $data) {
                         return $query->when(
                             $data['range'] === 'low',
-                            fn($query) => $query->where('value', '<', 6.0)
+                            fn ($query) => $query->where('value', '<', 6.0)
                         )->when(
                             $data['range'] === 'medium',
-                            fn($query) => $query->whereBetween('value', [6.0, 7.9])
+                            fn ($query) => $query->whereBetween('value', [6.0, 7.9])
                         )->when(
                             $data['range'] === 'high',
-                            fn($query) => $query->where('value', '>=', 8.0)
+                            fn ($query) => $query->where('value', '>=', 8.0)
                         );
                     }),
             ])

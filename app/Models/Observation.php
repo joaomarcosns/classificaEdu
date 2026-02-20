@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\ObservationCategory;
+use App\Enums\ObservationSentiment;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -38,6 +40,8 @@ class Observation extends Model
         return [
             'observation_date' => 'date',
             'is_private' => 'boolean',
+            'category' => ObservationCategory::class,
+            'sentiment' => ObservationSentiment::class,
         ];
     }
 
@@ -68,17 +72,17 @@ class Observation extends Model
     /**
      * Scope a query to filter by category.
      */
-    public function scopeByCategory(Builder $query, string $category): void
+    public function scopeByCategory(Builder $query, ObservationCategory|string $category): void
     {
-        $query->where('category', $category);
+        $query->where('category', $category instanceof ObservationCategory ? $category->value : $category);
     }
 
     /**
      * Scope a query to filter by sentiment.
      */
-    public function scopeBySentiment(Builder $query, string $sentiment): void
+    public function scopeBySentiment(Builder $query, ObservationSentiment|string $sentiment): void
     {
-        $query->where('sentiment', $sentiment);
+        $query->where('sentiment', $sentiment instanceof ObservationSentiment ? $sentiment->value : $sentiment);
     }
 
     /**
@@ -89,19 +93,23 @@ class Observation extends Model
         $query->whereBetween('observation_date', [$start, $end]);
     }
 
-    /**
-     * Get the pt-BR category label.
-     */
     public function getCategoryLabelAttribute(): string
     {
-        return trans("observations.categories.{$this->category}");
+        if ($this->category instanceof ObservationCategory) {
+            return $this->category->label();
+        }
+
+        return ObservationCategory::tryFrom((string) $this->category)?->label()
+            ?? trans("observations.categories.{$this->category}");
     }
 
-    /**
-     * Get the pt-BR sentiment label.
-     */
     public function getSentimentLabelAttribute(): string
     {
-        return trans("observations.sentiments.{$this->sentiment}");
+        if ($this->sentiment instanceof ObservationSentiment) {
+            return $this->sentiment->label();
+        }
+
+        return ObservationSentiment::tryFrom((string) $this->sentiment)?->label()
+            ?? trans("observations.sentiments.{$this->sentiment}");
     }
 }

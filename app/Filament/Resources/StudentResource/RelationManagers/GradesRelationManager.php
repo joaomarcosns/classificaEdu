@@ -2,9 +2,11 @@
 
 namespace App\Filament\Resources\StudentResource\RelationManagers;
 
+use App\Enums\AssessmentType;
+use App\Models\EvaluationPeriod;
 use Filament\Forms;
-use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Forms\Form;
+use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Actions\BulkActionGroup;
 use Filament\Tables\Actions\CreateAction;
@@ -26,6 +28,26 @@ class GradesRelationManager extends RelationManager
     {
         return $form
             ->schema([
+                Forms\Components\Select::make('period_id')
+                    ->label(trans('grades.fields.evaluation_period'))
+                    ->options(
+                        EvaluationPeriod::query()
+                            ->where('is_active', true)
+                            ->orderBy('academic_year')
+                            ->orderBy('order')
+                            ->get()
+                            ->mapWithKeys(fn (EvaluationPeriod $p) => [$p->id => $p->full_label])
+                    )
+                    ->required()
+                    ->searchable()
+                    ->native(false),
+
+                Forms\Components\Select::make('assessment_type')
+                    ->label(trans('grades.fields.assessment_type'))
+                    ->options(AssessmentType::options())
+                    ->searchable()
+                    ->native(false),
+
                 Forms\Components\TextInput::make('value')
                     ->label(trans('grades.fields.value'))
                     ->required()
@@ -34,12 +56,6 @@ class GradesRelationManager extends RelationManager
                     ->maxValue(10)
                     ->step(0.01)
                     ->suffix('/10'),
-
-                Forms\Components\Select::make('evaluation_period')
-                    ->label(trans('grades.fields.evaluation_period'))
-                    ->options(trans('grades.periods'))
-                    ->required()
-                    ->native(false),
 
                 Forms\Components\DatePicker::make('evaluation_date')
                     ->label(trans('grades.fields.evaluation_date'))
@@ -61,21 +77,40 @@ class GradesRelationManager extends RelationManager
         return $table
             ->recordTitleAttribute('value')
             ->columns([
+                Tables\Columns\TextColumn::make('period.name')
+                    ->label(trans('grades.fields.evaluation_period'))
+                    ->badge()
+                    ->formatStateUsing(fn ($state, $record) => $record->period?->name_label)
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('period.academic_year')
+                    ->label(trans('evaluation_periods.fields.academic_year'))
+                    ->badge()
+                    ->color('info')
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('assessment_type')
+                    ->label(trans('grades.fields.assessment_type'))
+                    ->badge()
+                    ->color('gray')
+                    ->formatStateUsing(function (?string $state): ?string {
+                        if (! $state) {
+                            return null;
+                        }
+
+                        return AssessmentType::tryFrom($state)?->label() ?? $state;
+                    })
+                    ->placeholder('—'),
+
                 Tables\Columns\TextColumn::make('value')
                     ->label(trans('grades.fields.value'))
                     ->badge()
-                    ->color(fn($state) => match (true) {
+                    ->color(fn ($state) => match (true) {
                         $state < 6.0 => 'danger',
                         $state < 8.0 => 'warning',
                         default => 'success',
                     })
-                    ->formatStateUsing(fn($state) => number_format($state, 2))
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('evaluation_period')
-                    ->label(trans('grades.fields.evaluation_period'))
-                    ->formatStateUsing(fn($state) => trans("grades.periods.{$state}"))
-                    ->badge()
+                    ->formatStateUsing(fn ($state) => number_format($state, 2))
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('evaluation_date')
@@ -86,27 +121,33 @@ class GradesRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('notes')
                     ->label(trans('grades.fields.notes'))
                     ->limit(50)
-                    ->tooltip(fn($state) => $state),
+                    ->tooltip(fn ($state) => $state),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('evaluation_period')
+                Tables\Filters\SelectFilter::make('period_id')
                     ->label(trans('grades.fields.evaluation_period'))
-                    ->options(trans('grades.periods')),
+                    ->options(
+                        EvaluationPeriod::query()
+                            ->orderBy('academic_year')
+                            ->orderBy('order')
+                            ->get()
+                            ->mapWithKeys(fn (EvaluationPeriod $p) => [$p->id => $p->full_label])
+                    ),
             ])
             ->headerActions([
                 CreateAction::make()
-                    ->tooltip('Criar'),
+                    ->tooltip(trans('actions.create')),
             ])
             ->actions([
                 EditAction::make()
-                    ->tooltip('Editar'),
+                    ->tooltip(trans('actions.edit')),
                 DeleteAction::make()
-                    ->tooltip('Excluir'),
+                    ->tooltip(trans('actions.delete')),
             ])
             ->bulkActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
-                        ->tooltip('Excluir selecionados'),
+                        ->tooltip(trans('actions.delete_selected')),
                 ]),
             ])
             ->defaultSort('evaluation_date', 'desc');

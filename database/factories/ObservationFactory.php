@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Enums\ObservationCategory;
+use App\Enums\ObservationSentiment;
 use App\Models\Student;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -22,14 +24,12 @@ class ObservationFactory extends Factory
             'student_id' => Student::factory(),
             'user_id' => User::factory(),
             'observation_date' => fake()->dateTimeThisMonth(),
-            'category' => fake()->randomElement([
-                'comportamento',
-                'participacao',
-                'cooperacao',
-                'responsabilidade',
-                'interacao_social',
-            ]),
-            'sentiment' => fake()->randomElement(['positivo', 'neutro', 'preocupante']),
+            'category' => fake()->randomElement(
+                array_map(fn (ObservationCategory $category) => $category->value, ObservationCategory::cases())
+            ),
+            'sentiment' => fake()->randomElement(
+                array_map(fn (ObservationSentiment $sentiment) => $sentiment->value, ObservationSentiment::cases())
+            ),
             'description' => fake()->paragraph(),
             'is_private' => false,
         ];
@@ -41,7 +41,7 @@ class ObservationFactory extends Factory
     public function positive(): static
     {
         return $this->state(fn (array $attributes) => [
-            'sentiment' => 'positivo',
+            'sentiment' => ObservationSentiment::Positive->value,
         ]);
     }
 
@@ -51,7 +51,7 @@ class ObservationFactory extends Factory
     public function concerning(): static
     {
         return $this->state(fn (array $attributes) => [
-            'sentiment' => 'preocupante',
+            'sentiment' => ObservationSentiment::Concerning->value,
         ]);
     }
 

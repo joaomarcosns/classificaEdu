@@ -2,13 +2,14 @@
 
 namespace App\Filament\Widgets;
 
+use App\Enums\ObservationCategory;
 use App\Models\Observation;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Facades\DB;
 
 class ObservationsCategoryPieChart extends ChartWidget
 {
-    protected static ?string $heading = 'Grafico: Observacoes por categoria';
+    protected static ?string $heading = null;
 
     protected static ?int $sort = 6;
 
@@ -22,11 +23,18 @@ class ObservationsCategoryPieChart extends ChartWidget
             ->orderByDesc('total')
             ->get();
 
-        $labels = $observations->map(function ($row) {
-            $labelKey = "observations.categories.{$row->category}";
-            $label = trans($labelKey);
+        $labels = $observations->map(function ($row): string {
+            if ($row->category instanceof ObservationCategory) {
+                return $row->category->label();
+            }
 
-            return $label === $labelKey ? $row->category : $label;
+            $category = is_string($row->category) ? $row->category : null;
+
+            if ($category !== null) {
+                return ObservationCategory::tryFrom($category)?->label() ?? $category;
+            }
+
+            return trans('observations.categories.other');
         })->all();
 
         $data = $observations->map(fn ($row) => (int) $row->total)->all();
@@ -34,7 +42,7 @@ class ObservationsCategoryPieChart extends ChartWidget
         return [
             'datasets' => [
                 [
-                    'label' => 'Observacoes',
+                    'label' => trans('widgets.observations_category_pie.dataset_label'),
                     'data' => $data,
                     'backgroundColor' => [
                         '#60a5fa',
@@ -53,5 +61,10 @@ class ObservationsCategoryPieChart extends ChartWidget
     protected function getType(): string
     {
         return 'doughnut';
+    }
+
+    public function getHeading(): ?string
+    {
+        return trans('widgets.observations_category_pie.heading');
     }
 }

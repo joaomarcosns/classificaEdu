@@ -26,23 +26,25 @@ return [
     ],
 
     'classifications' => [
-        'basico' => 'Básico',
-        'intermediario' => 'Intermediário',
-        'avancado' => 'Avançado',
+        'basic' => 'Básico',
+        'intermediate' => 'Intermediário',
+        'advanced' => 'Avançado',
     ],
 
     'impact' => [
         'positive_prefix' => ':count observações positivas em :category indicam',
         'concerning_prefix' => ':count observações preocupantes em :category requerem',
         'neutral_prefix' => ':count observações neutras em :category foram registradas',
+        'skill_suffix' => 'em :skill',
 
         'skills' => [
-            'comportamento' => 'conduta geral em sala de aula',
-            'participacao' => 'engajamento nas atividades',
-            'cooperacao' => 'trabalho em equipe e colaboração',
-            'responsabilidade' => 'cumprimento de tarefas e compromissos',
-            'interacao_social' => 'relacionamento interpessoal',
-            'outro' => 'aspectos diversos do desenvolvimento',
+            'behavior' => 'conduta geral em sala de aula',
+            'participation' => 'engajamento nas atividades',
+            'cooperation' => 'trabalho em equipe e colaboração',
+            'responsibility' => 'cumprimento de tarefas e compromissos',
+            'social_interaction' => 'relacionamento interpessoal',
+            'other' => 'aspectos diversos do desenvolvimento',
+            'general_development' => 'desenvolvimento geral',
         ],
 
         'positive_impact' => 'impacto positivo',
@@ -53,5 +55,11 @@ return [
         'grades' => 'Nenhuma nota registrada para este aluno.',
         'observations' => 'Nenhuma observação registrada para este aluno.',
         'classification' => 'Classificação não disponível.',
+    ],
+
+    'legacy_classification_map' => [
+        'basic' => 'basico',
+        'intermediate' => 'intermediario',
+        'advanced' => 'avancado',
     ],
 ];

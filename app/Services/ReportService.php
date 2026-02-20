@@ -2,56 +2,46 @@
 
 namespace App\Services;
 
+use App\Enums\ObservationCategory;
+use App\Enums\ObservationSentiment;
 use App\Models\Student;
-use Illuminate\Support\Collection;
 
 class ReportService
 {
     /**
-     * Category to skill mapping for impact analysis.
-     */
-    protected const SKILL_MAPPING = [
-        'comportamento' => 'conduta geral em sala de aula',
-        'participacao' => 'engajamento nas atividades',
-        'cooperacao' => 'trabalho em equipe e colaboração',
-        'responsabilidade' => 'cumprimento de tarefas e compromissos',
-        'interacao_social' => 'relacionamento interpessoal',
-        'outro' => 'aspectos diversos do desenvolvimento',
-    ];
-
-    /**
      * Generate comprehensive student report data.
      */
-    public function generateStudentReport(Student $student, ?string $period = null): array
+    public function generateStudentReport(Student $student, ?int $periodId = null): array
     {
-        $student->load(['grades', 'observations.user', 'classification']);
+        $student->load(['grades.period', 'observations.user', 'classification']);
 
         return [
             'student' => $student,
             'classification' => $student->classification,
-            'grades' => $this->getGradesData($student, $period),
+            'grades' => $this->getGradesData($student, $periodId),
             'observations' => $this->getObservationsData($student),
             'impact_analysis' => $this->generateImpactAnalysis($student),
             'generated_at' => now(),
-            'period' => $period,
+            'period_id' => $periodId,
         ];
     }
 
     /**
      * Get grades data with period breakdown.
      */
-    protected function getGradesData(Student $student, ?string $period): array
+    protected function getGradesData(Student $student, ?int $periodId): array
     {
-        $query = $student->grades();
+        $query = $student->grades()->with('period');
 
-        if ($period) {
-            $query->where('evaluation_period', $period);
+        if ($periodId) {
+            $query->where('period_id', $periodId);
         }
 
         $grades = $query->orderBy('evaluation_date')->get();
 
-        $byPeriod = $grades->groupBy('evaluation_period')->map(function ($periodGrades) {
+        $byPeriod = $grades->groupBy('period_id')->map(function ($periodGrades) {
             return [
+                'period' => $periodGrades->first()->period,
                 'grades' => $periodGrades,
                 'average' => $periodGrades->avg('value'),
                 'classification' => $this->getClassificationFromAverage($periodGrades->avg('value')),
@@ -76,8 +66,16 @@ class ReportService
             ->orderBy('observation_date', 'desc')
             ->get();
 
-        $byCategory = $observations->groupBy('category');
-        $bySentiment = $observations->groupBy('sentiment');
+        $byCategory = $observations->groupBy(function ($observation) {
+            return $observation->category instanceof ObservationCategory
+                ? $observation->category->value
+                : $observation->category;
+        });
+        $bySentiment = $observations->groupBy(function ($observation) {
+            return $observation->sentiment instanceof ObservationSentiment
+                ? $observation->sentiment->value
+                : $observation->sentiment;
+        });
 
         return [
             'all' => $observations,
@@ -97,16 +95,25 @@ class ReportService
         $observations = $student->observations()->public()->get();
         $analysis = [];
 
-        $grouped = $observations->groupBy('category');
+        $grouped = $observations->groupBy(function ($observation) {
+            return $observation->category instanceof ObservationCategory
+                ? $observation->category->value
+                : $observation->category;
+        });
 
         foreach ($grouped as $category => $categoryObservations) {
-            $sentiments = $categoryObservations->groupBy('sentiment');
+            $sentiments = $categoryObservations->groupBy(function ($observation) {
+                return $observation->sentiment instanceof ObservationSentiment
+                    ? $observation->sentiment->value
+                    : $observation->sentiment;
+            });
 
             $insights = [];
 
             foreach ($sentiments as $sentiment => $sentimentObservations) {
                 $count = $sentimentObservations->count();
-                $skill = self::SKILL_MAPPING[$category] ?? 'desenvolvimento geral';
+                $skill = ObservationCategory::tryFrom($category)?->impactSkillLabel()
+                    ?? trans('reports.impact.skills.general_development');
 
                 $insight = $this->buildInsight($count, $category, $sentiment, $skill);
 
@@ -118,7 +125,8 @@ class ReportService
             if (! empty($insights)) {
                 $analysis[$category] = [
                     'category_label' => trans("observations.categories.{$category}"),
-                    'skill' => self::SKILL_MAPPING[$category] ?? 'desenvolvimento geral',
+                    'skill' => ObservationCategory::tryFrom($category)?->impactSkillLabel()
+                        ?? trans('reports.impact.skills.general_development'),
                     'insights' => $insights,
                     'total_count' => $categoryObservations->count(),
                 ];
@@ -136,14 +144,24 @@ class ReportService
         $categoryLabel = trans("observations.categories.{$category}");
 
         return match ($sentiment) {
-            'positivo' => "{$count} " . ($count === 1 ? 'observação positiva' : 'observações positivas')
-                . " em {$categoryLabel} indicam impacto positivo em {$skill}",
+            ObservationSentiment::Positive->value => sprintf(
+                '%s %s %s',
+                trans('reports.impact.positive_prefix', ['count' => $count, 'category' => $categoryLabel]),
+                trans('reports.impact.positive_impact'),
+                trans('reports.impact.skill_suffix', ['skill' => $skill])
+            ),
 
-            'preocupante' => "{$count} " . ($count === 1 ? 'observação preocupante' : 'observações preocupantes')
-                . " em {$categoryLabel} requerem atenção e acompanhamento em {$skill}",
+            ObservationSentiment::Concerning->value => sprintf(
+                '%s %s %s',
+                trans('reports.impact.concerning_prefix', ['count' => $count, 'category' => $categoryLabel]),
+                trans('reports.impact.needs_attention'),
+                trans('reports.impact.skill_suffix', ['skill' => $skill])
+            ),
 
-            'neutro' => "{$count} " . ($count === 1 ? 'observação neutra' : 'observações neutras')
-                . " em {$categoryLabel} foram registradas",
+            ObservationSentiment::Neutral->value => trans('reports.impact.neutral_prefix', [
+                'count' => $count,
+                'category' => $categoryLabel,
+            ]),
 
             default => null,
         };
@@ -159,22 +177,22 @@ class ReportService
         }
 
         if ($average < 6.0) {
-            return 'Básico';
+            return trans('reports.classifications.basic');
         }
 
         if ($average < 8.0) {
-            return 'Intermediário';
+            return trans('reports.classifications.intermediate');
         }
 
-        return 'Avançado';
+        return trans('reports.classifications.advanced');
     }
 
     /**
      * Render student report as HTML.
      */
-    public function renderStudentReportHtml(Student $student, ?string $period = null): string
+    public function renderStudentReportHtml(Student $student, ?int $periodId = null): string
     {
-        $data = $this->generateStudentReport($student, $period);
+        $data = $this->generateStudentReport($student, $periodId);
 
         return view('reports.student-comprehensive', $data)->render();
     }

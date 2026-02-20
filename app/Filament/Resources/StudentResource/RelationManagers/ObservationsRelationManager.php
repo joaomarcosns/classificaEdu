@@ -2,9 +2,11 @@
 
 namespace App\Filament\Resources\StudentResource\RelationManagers;
 
+use App\Enums\ObservationCategory;
+use App\Enums\ObservationSentiment;
 use Filament\Forms;
-use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Forms\Form;
+use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Actions\BulkActionGroup;
 use Filament\Tables\Actions\CreateAction;
@@ -37,13 +39,13 @@ class ObservationsRelationManager extends RelationManager
 
                 Forms\Components\Select::make('category')
                     ->label(trans('observations.fields.category'))
-                    ->options(trans('observations.categories'))
+                    ->options(ObservationCategory::options())
                     ->required()
                     ->native(false),
 
                 Forms\Components\Select::make('sentiment')
                     ->label(trans('observations.fields.sentiment'))
-                    ->options(trans('observations.sentiments'))
+                    ->options(ObservationSentiment::options())
                     ->required()
                     ->native(false),
 
@@ -80,37 +82,44 @@ class ObservationsRelationManager extends RelationManager
 
                 Tables\Columns\TextColumn::make('category')
                     ->label(trans('observations.fields.category'))
-                    ->formatStateUsing(fn($state) => trans("observations.categories.{$state}"))
+                    ->formatStateUsing(function ($state): string {
+                        if ($state instanceof ObservationCategory) {
+                            return $state->label();
+                        }
+
+                        return ObservationCategory::tryFrom((string) $state)?->label() ?? (string) $state;
+                    })
                     ->badge()
-                    ->color(fn($state) => match ($state) {
-                        'comportamento' => 'info',
-                        'participacao' => 'success',
-                        'cooperacao' => 'primary',
-                        'responsabilidade' => 'warning',
-                        'interacao_social' => 'indigo',
-                        default => 'gray',
+                    ->color(function ($state): string {
+                        if ($state instanceof ObservationCategory) {
+                            return $state->color();
+                        }
+
+                        return ObservationCategory::tryFrom((string) $state)?->color() ?? 'gray';
                     }),
 
                 Tables\Columns\IconColumn::make('sentiment')
                     ->label(trans('observations.fields.sentiment'))
-                    ->icon(fn($state) => match ($state) {
-                        'positivo' => 'heroicon-o-check-circle',
-                        'neutro' => 'heroicon-o-minus-circle',
-                        'preocupante' => 'heroicon-o-exclamation-triangle',
-                        default => 'heroicon-o-question-mark-circle',
+                    ->icon(function ($state): string {
+                        if ($state instanceof ObservationSentiment) {
+                            return $state->icon();
+                        }
+
+                        return ObservationSentiment::tryFrom((string) $state)?->icon() ?? 'heroicon-o-question-mark-circle';
                     })
-                    ->color(fn($state) => match ($state) {
-                        'positivo' => 'success',
-                        'neutro' => 'gray',
-                        'preocupante' => 'danger',
-                        default => 'gray',
+                    ->color(function ($state): string {
+                        if ($state instanceof ObservationSentiment) {
+                            return $state->color();
+                        }
+
+                        return ObservationSentiment::tryFrom((string) $state)?->color() ?? 'gray';
                     }),
 
                 Tables\Columns\TextColumn::make('description')
                     ->label(trans('observations.fields.description'))
                     ->html()
                     ->limit(80)
-                    ->tooltip(fn($state) => strip_tags($state)),
+                    ->tooltip(fn ($state) => strip_tags($state)),
 
                 Tables\Columns\IconColumn::make('is_private')
                     ->label(trans('observations.fields.is_private'))
@@ -120,28 +129,28 @@ class ObservationsRelationManager extends RelationManager
             ->filters([
                 Tables\Filters\SelectFilter::make('category')
                     ->label(trans('observations.fields.category'))
-                    ->options(trans('observations.categories')),
+                    ->options(ObservationCategory::options()),
 
                 Tables\Filters\SelectFilter::make('sentiment')
                     ->label(trans('observations.fields.sentiment'))
-                    ->options(trans('observations.sentiments')),
+                    ->options(ObservationSentiment::options()),
             ])
             ->headerActions([
                 CreateAction::make()
-                    ->tooltip('Criar'),
+                    ->tooltip(trans('actions.create')),
             ])
             ->actions([
                 ViewAction::make()
-                    ->tooltip('Visualizar'),
+                    ->tooltip(trans('actions.view')),
                 EditAction::make()
-                    ->tooltip('Editar'),
+                    ->tooltip(trans('actions.edit')),
                 DeleteAction::make()
-                    ->tooltip('Excluir'),
+                    ->tooltip(trans('actions.delete')),
             ])
             ->bulkActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
-                        ->tooltip('Excluir selecionados'),
+                        ->tooltip(trans('actions.delete_selected')),
                 ]),
             ])
             ->defaultSort('observation_date', 'desc');

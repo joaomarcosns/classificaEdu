@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('student_id')->constrained()->cascadeOnDelete();
             $table->decimal('value', 4, 2);
             $table->date('evaluation_date');
-            $table->enum('evaluation_period', ['trimestre_1', 'trimestre_2', 'trimestre_3', 'final']);
+            $table->string('evaluation_period')->default('term_1');
             $table->text('notes')->nullable();
             $table->timestamps();
 
