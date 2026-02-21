@@ -145,4 +145,16 @@ class Student extends Model
     {
         return $this->grades()->where('period_id', $periodId)->exists();
     }
+
+    public function evaluation_periods()
+    {
+        return $this->hasManyThrough(
+            EvaluationPeriod::class,
+            Grade::class,
+            'student_id', // Foreign key on grades table
+            'id', // Foreign key on evaluation_periods table
+            'id', // Local key on students table
+            'period_id' // Local key on grades table
+        )->distinct();
+    }
 }

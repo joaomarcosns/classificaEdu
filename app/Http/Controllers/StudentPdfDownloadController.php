@@ -11,7 +11,11 @@ class StudentPdfDownloadController extends Controller
 {
     public function __invoke(Student $student)
     {
-        $student->loadMissing(['classification', 'grades', 'observations']);
+        $student->loadMissing([
+            'classification',
+            'observations',
+            'evaluation_periods.grades',
+        ]);
 
         return pdf()
             ->view('docs.pdf.student', ['student' => $student])

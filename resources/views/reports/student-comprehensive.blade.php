@@ -215,7 +215,7 @@
             </div>
             <div class="info-row">
                 <div class="info-label">{{ trans('students.fields.grade_level') }}</div>
-                <div class="info-value">{{ $student->grade_level }}</div>
+                <div class="info-value">{{ $student->grade_level_label }}</div>
             </div>
             <div class="info-row">
                 <div class="info-label">{{ trans('students.fields.class_name') }}</div>
